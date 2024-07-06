@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebGL Maze Game</title>
+    <style>
+        body { margin: 0; }
+        canvas { display: block; }
+        #instructions {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <div id="instructions">
+        Click to start. Use WASD to move. Find your way out of the maze!
+    </div>
+    <script type="module">
+        import * as THREE from './three.module.js';
+        import { PointerLockControls } from './PointerLockControls.js';
+
+        let scene, camera, renderer, controls;
+        let maze = [];
+        const mazeSize = 20;
+        const wallSize = 5;
+
+        function init() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            controls = new PointerLockControls(camera, renderer.domElement);
+            document.addEventListener('click', function() {
+                controls.lock();
+            });
+
+            generateMaze();
+            createMaze();
+
+            const light = new THREE.PointLight(0xffffff, 1, 100);
+            light.position.set(0, 10, 0);
+            scene.add(light);
+
+            camera.position.set(0, 2, 0);
+
+            animate();
+        }
+
+        function generateMaze() {
+            for (let i = 0; i < mazeSize; i++) {
+                maze[i] = [];
+                for (let j = 0; j < mazeSize; j++) {
+                    maze[i][j] = Math.random() < 0.3 ? 1 : 0;
+                }
+            }
+            // Ensure start position is clear
+            maze[Math.floor(mazeSize/2)][Math.floor(mazeSize/2)] = 0;
+        }
+
+        function createMaze() {
+            const wallGeometry = new THREE.BoxGeometry(wallSize, wallSize, wallSize);
+            const wallMaterial = new THREE.MeshPhongMaterial({ color: 0x00ff00 });
+
+            for (let i = 0; i < mazeSize; i++) {
+                for (let j = 0; j < mazeSize; j++) {
+                    if (maze[i][j] === 1) {
+                        const wall = new THREE.Mesh(wallGeometry, wallMaterial);
+                        wall.position.set(
+                            (i - mazeSize/2) * wallSize,
+                            wallSize/2,
+                            (j - mazeSize/2) * wallSize
+                        );
+                        scene.add(wall);
+                    }
+                }
+            }
+
+            // Add floor
+            const floorGeometry = new THREE.PlaneGeometry(mazeSize * wallSize, mazeSize * wallSize);
+            const floorMaterial = new THREE.MeshPhongMaterial({ color: 0xcccccc, side: THREE.DoubleSide });
+            const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+            floor.rotation.x = Math.PI / 2;
+            scene.add(floor);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        window.addEventListener('resize', onWindowResize, false);
+
+        init();
+
+        // WASD movement
+        document.addEventListener('keydown', (event) => {
+            const speed = 0.5;
+            switch (event.code) {
+                case 'KeyW':
+                    controls.moveForward(speed);
+                    break;
+                case 'KeyS':
+                    controls.moveForward(-speed);
+                    break;
+                case 'KeyA':
+                    controls.moveRight(-speed);
+                    break;
+                case 'KeyD':
+                    controls.moveRight(speed);
+                    break;
+            }
+        });
+    </script>
+</body>
+</html>
