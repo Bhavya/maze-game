@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WebGL Maze Game</title>
+    <title>WebGL Maze Game with Flashlight</title>
     <style>
         body { margin: 0; }
         canvas { display: block; }
@@ -19,6 +19,7 @@
 <body>
     <div id="instructions">
         Click to start. Use WASD to move. Find your way out of the maze!
+        Press F to toggle flashlight.
     </div>
     <script type="module">
         import * as THREE from './three.module.js';
@@ -28,6 +29,7 @@
         let maze = [];
         const mazeSize = 20;
         const wallSize = 5;
+        let flashlight, ambientLight;
 
         function init() {
             scene = new THREE.Scene();
@@ -44,9 +46,17 @@
             generateMaze();
             createMaze();
 
-            const light = new THREE.PointLight(0xffffff, 1, 100);
-            light.position.set(0, 10, 0);
-            scene.add(light);
+            // Add ambient light
+            ambientLight = new THREE.AmbientLight(0x404040, 0.2);
+            scene.add(ambientLight);
+
+            // Add flashlight
+            flashlight = new THREE.SpotLight(0xffffff, 1, 50, Math.PI / 4, 0.5, 1);
+            flashlight.position.set(0, 0, 0);
+            flashlight.target.position.set(0, 0, -1);
+            camera.add(flashlight);
+            camera.add(flashlight.target);
+            scene.add(camera);
 
             camera.position.set(0, 2, 0);
 
@@ -105,7 +115,7 @@
 
         init();
 
-        // WASD movement
+        // WASD movement and flashlight toggle
         document.addEventListener('keydown', (event) => {
             const speed = 0.5;
             switch (event.code) {
@@ -120,6 +130,9 @@
                     break;
                 case 'KeyD':
                     controls.moveRight(speed);
+                    break;
+                case 'KeyF':
+                    flashlight.visible = !flashlight.visible;
                     break;
             }
         });
